@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>合约交易盈亏计算器</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 30px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      background: #e7f5ff;
+      padding: 15px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>合约交易盈亏计算器</h2>
+    
+    <label>交易方向：</label>
+    <select id="direction">
+      <option value="long">做多</option>
+      <option value="short">做空</option>
+    </select>
+
+    <label>开仓价格：</label>
+    <input type="number" id="openPrice" placeholder="如：20000" />
+
+    <label>止损价格：</label>
+    <input type="number" id="stopPrice" placeholder="如：19500" />
+
+    <label>计划亏损金额 (USDT)：</label>
+    <input type="number" id="riskAmount" placeholder="如：100" />
+
+    <label>盈亏比 (如 2 表示 1:2)：</label>
+    <input type="number" id="rrRatio" placeholder="如：2" />
+
+    <button onclick="calculate()">计算</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    function calculate() {
+      const direction = document.getElementById("direction").value;
+      const openPrice = parseFloat(document.getElementById("openPrice").value);
+      const stopPrice = parseFloat(document.getElementById("stopPrice").value);
+      const riskAmount = parseFloat(document.getElementById("riskAmount").value);
+      const rrRatio = parseFloat(document.getElementById("rrRatio").value);
+      const resultBox = document.getElementById("result");
+
+      if (!openPrice || !stopPrice || !riskAmount || !rrRatio) {
+        resultBox.innerHTML = "请填写所有字段。";
+        return;
+      }
+
+      const priceDiff = Math.abs(openPrice - stopPrice);
+      const unitLoss = priceDiff / openPrice;
+      const positionSize = riskAmount / unitLoss;
+
+      let tpPrice;
+      if (direction === "long") {
+        tpPrice = openPrice + priceDiff * rrRatio;
+      } else {
+        tpPrice = openPrice - priceDiff * rrRatio;
+      }
+
+      // 计算手续费
+      const feeRate = 0.0006; // 0.06%
+      const openFee = positionSize * feeRate;
+      const closeFee = positionSize * feeRate;
+      const totalFee = openFee + closeFee;
+
+      const expectedProfit = riskAmount * rrRatio;
+      const feeRatio = totalFee / expectedProfit;
+
+      resultBox.innerHTML = `
+        建议持仓金额：<strong>${positionSize.toFixed(2)} USDT</strong><br/>
+        止盈价格：<strong>${tpPrice.toFixed(2)}</strong><br/>
+        预期盈利金额：<strong>${expectedProfit.toFixed(2)} USDT</strong><br/><br/>
+        
+        开仓手续费：<strong>${openFee.toFixed(2)} USDT</strong><br/>
+        平仓手续费：<strong>${closeFee.toFixed(2)} USDT</strong><br/>
+        总手续费：<strong>${totalFee.toFixed(2)} USDT</strong><br/>
+        手续费占预期盈利比例：<strong>${(feeRatio * 100).toFixed(2)}%</strong>
+      `;
+    }
+  </script>
+</body>
+</html>
+
